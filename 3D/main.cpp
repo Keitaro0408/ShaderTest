@@ -7,6 +7,7 @@
 #include "main.h"
 #include "dinput.h"
 #include "Collision.h"
+#include "LightScatteringSimulation.h"
 
 #pragma comment(lib, "winmm.lib")
 #pragma comment(lib, "d3d9.lib")
@@ -20,11 +21,14 @@ LPDIRECT3DDEVICE9 pDevice;
 FLOAT fCameraX = 0, fCameraY = 1.0f, fCameraZ = -15.0f,
 fCameraHeading = 0, fCameraPitch = 0;
 
+//光散乱シミュレーションクラスの宣言
+LSS* m_pLSS = NULL;
+
 LPD3DXFONT pFont;
 FLOAT fLookX = 0, fLookY = 1.0f, fLookZ = -3.0f;
 FLOAT movabs = 0.0f;
 
-THING Thing[3];
+THING Thing[4];
 KEYSTATE Key[KEYMAX];
 bool mouse_activate = false;
 float mouse_sens = 5.0f;
@@ -135,6 +139,11 @@ HRESULT InitD3d(HWND hWnd)
 	pDevice->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
 	pDevice->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
 	pDevice->SetRenderState(D3DRS_ALPHATESTENABLE, TRUE);
+	//太陽を固定機能パイプラインでレンダリング
+	//pDevice->SetRenderState(D3DRS_LIGHTING, FALSE);
+	//pDevice->SetRenderState(D3DRS_BLENDOP, D3DBLENDOP_ADD);
+	//pDevice->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
+	//pDevice->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_ONE);
 
 	return S_OK;
 }
@@ -156,10 +165,10 @@ VOID RenderThing(THING* pThing)
 	D3DXVECTOR3 vecEyePt(fCameraX, fCameraY, fCameraZ); //カメラ（視点）位置
 	D3DXVECTOR3 vecLookatPt(fLookX, fLookY, fLookZ + 5);//注視位置
 	D3DXVECTOR3 vecUpVec(0.0f, 1.0f, 0.0f);//上方位置  
-
 	D3DXMatrixIdentity(&matView);
 	D3DXMatrixRotationY(&matHeading, fCameraHeading);
 	D3DXMatrixRotationX(&matPitch, fCameraPitch);
+
 	D3DXMatrixLookAtLH(&matCameraPosition, &vecEyePt, &vecLookatPt, &vecUpVec);
 	D3DXMatrixMultiply(&matView, &matView, &matCameraPosition);
 	D3DXMatrixMultiply(&matView, &matView, &matHeading);
@@ -168,6 +177,10 @@ VOID RenderThing(THING* pThing)
 	// プロジェクショントランスフォーム（射影変換）
 	D3DXMATRIXA16 matProj;
 	D3DXMatrixPerspectiveFovLH(&matProj, D3DX_PI / 4, 1.0f, 1.0f, 100.0f);
+	//D3DXMatrixPerspectiveFovLH(&matProj,
+	//	D3DX_PI / 4.0f,
+	//	4.0f / 3.0f,
+	//	30.0f, 1100.0f);
 	pDevice->SetTransform(D3DTS_PROJECTION, &matProj);
 
 	// ライトをあてる 白色で鏡面反射ありに設定
@@ -213,7 +226,6 @@ VOID Render()
 {
 	pDevice->Clear(0, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER,
 		D3DCOLOR_XRGB(100, 100, 100), 1.0f, 0);
-
 	if (SUCCEEDED(pDevice->BeginScene()))
 	{
 		//for (DWORD i = 0; i<THING_AMOUNT; i++)
@@ -406,7 +418,7 @@ INT WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR szStr, INT iCmdSh
 	RegisterClassEx(&wndclass);
 
 	hWnd = CreateWindow(szAppName, szAppName, WS_OVERLAPPEDWINDOW,
-		0, 0, 800, 600, NULL, NULL, hInst, NULL);
+		0, 0, 1024, 768, NULL, NULL, hInst, NULL);
 
 	ShowWindow(hWnd, SW_SHOW);
 	UpdateWindow(hWnd);
@@ -421,6 +433,8 @@ INT WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR szStr, INT iCmdSh
 	{
 		return 0;
 	}
+	m_pLSS = new LSS(pDevice);
+	m_pLSS->Load("CLUTSky.jpg", "CLUTLight.jpg");
 
 	//dinputのキーボード初期化
 	if (FAILED(InitDinput_Key(hWnd)))
