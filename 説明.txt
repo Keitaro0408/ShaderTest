@@ -1,0 +1,20 @@
+W Key カメラのz値増加
+S Key カメラのz値減少
+
+A Key カメラのx値減少
+D Key カメラのx値増加
+
+E Key 視点の降下
+Q Key 視点の上昇
+
+R マウス感度増加
+T マウス感度減少
+
+C マウス 有効化 : 無効化
+
+LEFT ARROW 戦車 x値減少
+RIGHT ARROW　戦車 x値増加
+UP ARROW　戦車 z値増加
+DOWN ARROW 戦車 z値減少
+
+マウス感度が増加するほどカメラの動きが鈍くなります。
