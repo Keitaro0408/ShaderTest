@@ -21,6 +21,11 @@ LPDIRECT3DDEVICE9 pDevice;
 FLOAT fCameraX = 0, fCameraY = 1.0f, fCameraZ = -15.0f,
 fCameraHeading = 0, fCameraPitch = 0;
 
+//太陽の角度
+float SunRotation = 45.0f;
+
+//太陽の半径
+float SunRadius = 350.0f;
 //光散乱シミュレーションクラスの宣言
 LSS* m_pLSS = NULL;
 
@@ -156,9 +161,26 @@ VOID RenderThing(THING* pThing)
 	//ワールドトランスフォーム（絶対座標変換）
 	D3DXMATRIXA16 matWorld, matPosition;
 	D3DXMatrixIdentity(&matWorld);
+	m_pLSS->Begin();
+
+	//太陽の位置を取得
+	D3DXVECTOR4 LightPos, LightDir;
+	//太陽の位置を計算
+	LightPos = D3DXVECTOR4(0.0f, SunRadius * sinf(D3DXToRadian(SunRotation)), SunRadius * cosf(D3DXToRadian(SunRotation)), 0.0f);
+	//太陽の方向ベクトルを計算
+	LightDir = D3DXVECTOR4(-LightPos.x, -LightPos.y, -LightPos.z, LightPos.w);
+	//太陽の方向ベクトルを正規化
+	D3DXVec3Normalize((D3DXVECTOR3*)&LightDir, (D3DXVECTOR3*)&LightDir);
+	m_pLSS->SetMatrix(&matWorld, &LightDir);
+	m_pLSS->SetAmbient(0.1f);
+	//フォグのパラメータを設定
+	m_pLSS->SetParameters(20.0f, 1.0f);
+	//フォグの色を設定
+	m_pLSS->SetFogColor(1.0f);
 	D3DXMatrixTranslation(&matPosition, pThing->vecPosition.x, pThing->vecPosition.y,
 		pThing->vecPosition.z);
 	D3DXMatrixMultiply(&matWorld, &matWorld, &matPosition);
+
 	pDevice->SetTransform(D3DTS_WORLD, &matWorld);
 	// ビュートランスフォーム（視点座標変換）
 	D3DXMATRIXA16 matView, matCameraPosition, matHeading, matPitch;
@@ -203,8 +225,11 @@ VOID RenderThing(THING* pThing)
 	{
 		pDevice->SetMaterial(&pThing->pMeshMaterials[i]);
 		pDevice->SetTexture(0, pThing->pMeshTextures[i]);
+	m_pLSS->BeginPass(1);
 		pThing->pMesh->DrawSubset(i);
+	m_pLSS->EndPass();
 	}
+	m_pLSS->End();
 }
 
 void RenderSphere(THING* pThing)
@@ -234,9 +259,9 @@ VOID Render()
 		//}
 		RenderThing(&Thing[0]);
 		RenderThing(&Thing[1]);
-		RenderSphere(&Thing[1]);
-		RenderThing(&Thing[2]);
-		RenderSphere(&Thing[2]);
+		//RenderSphere(&Thing[1]);
+		//RenderThing(&Thing[2]);
+		//RenderSphere(&Thing[2]);
 		if (CollisionCheck(&Thing[1], &Thing[2]))
 		{
 			RenderString("衝突しています\n境界ボリュームが重なっているということです", 10, 80);
