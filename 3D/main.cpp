@@ -171,17 +171,17 @@ VOID RenderThing(THING* pThing)
 	LightDir = D3DXVECTOR4(-LightPos.x, -LightPos.y, -LightPos.z, LightPos.w);
 	//太陽の方向ベクトルを正規化
 	D3DXVec3Normalize((D3DXVECTOR3*)&LightDir, (D3DXVECTOR3*)&LightDir);
+	D3DXMatrixTranslation(&matPosition, pThing->vecPosition.x, pThing->vecPosition.y,
+		pThing->vecPosition.z);
+	D3DXMatrixMultiply(&matWorld, &matWorld, &matPosition);
+
+	pDevice->SetTransform(D3DTS_WORLD, &matWorld);
 	m_pLSS->SetMatrix(&matWorld, &LightDir);
 	m_pLSS->SetAmbient(0.1f);
 	//フォグのパラメータを設定
 	m_pLSS->SetParameters(20.0f, 1.0f);
 	//フォグの色を設定
 	m_pLSS->SetFogColor(1.0f);
-	D3DXMatrixTranslation(&matPosition, pThing->vecPosition.x, pThing->vecPosition.y,
-		pThing->vecPosition.z);
-	D3DXMatrixMultiply(&matWorld, &matWorld, &matPosition);
-
-	pDevice->SetTransform(D3DTS_WORLD, &matWorld);
 	// ビュートランスフォーム（視点座標変換）
 	D3DXMATRIXA16 matView, matCameraPosition, matHeading, matPitch;
 	D3DXVECTOR3 vecEyePt(fCameraX, fCameraY, fCameraZ); //カメラ（視点）位置
@@ -198,7 +198,7 @@ VOID RenderThing(THING* pThing)
 	pDevice->SetTransform(D3DTS_VIEW, &matView);
 	// プロジェクショントランスフォーム（射影変換）
 	D3DXMATRIXA16 matProj;
-	D3DXMatrixPerspectiveFovLH(&matProj, D3DX_PI / 4, 1.0f, 1.0f, 100.0f);
+	D3DXMatrixPerspectiveFovLH(&matProj, D3DX_PI / 4, 1.0f, 1.0f, 1100.0f);
 	//D3DXMatrixPerspectiveFovLH(&matProj,
 	//	D3DX_PI / 4.0f,
 	//	4.0f / 3.0f,
@@ -223,9 +223,9 @@ VOID RenderThing(THING* pThing)
 	// レンダリング	 
 	for (DWORD i = 0; i<pThing->dwNumMaterials; i++)
 	{
+	m_pLSS->BeginPass(1);
 		pDevice->SetMaterial(&pThing->pMeshMaterials[i]);
 		pDevice->SetTexture(1, pThing->pMeshTextures[i]);
-	m_pLSS->BeginPass(1);
 		pThing->pMesh->DrawSubset(i);
 	m_pLSS->EndPass();
 	}
