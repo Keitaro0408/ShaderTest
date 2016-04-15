@@ -224,7 +224,7 @@ VOID RenderThing(THING* pThing)
 	for (DWORD i = 0; i<pThing->dwNumMaterials; i++)
 	{
 		pDevice->SetMaterial(&pThing->pMeshMaterials[i]);
-		pDevice->SetTexture(0, pThing->pMeshTextures[i]);
+		pDevice->SetTexture(1, pThing->pMeshTextures[i]);
 	m_pLSS->BeginPass(1);
 		pThing->pMesh->DrawSubset(i);
 	m_pLSS->EndPass();
@@ -308,6 +308,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 
 void Control()
 {
+	SunRotation -= 0.1f;
+	if (SunRotation < 0.0f)
+	{
+		SunRotation = 45.0f;
+	}
 	static int time_count = 0;
 	KeyCheck_Dinput(&Key[LEFT],DIK_LEFT);
 	KeyCheck_Dinput(&Key[UP], DIK_UP);
